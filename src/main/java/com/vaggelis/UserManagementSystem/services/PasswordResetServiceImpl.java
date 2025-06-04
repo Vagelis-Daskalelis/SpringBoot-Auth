@@ -1,0 +1,62 @@
+package com.vaggelis.UserManagementSystem.services;
+
+import com.vaggelis.UserManagementSystem.models.PasswordResetToken;
+import com.vaggelis.UserManagementSystem.models.User;
+import com.vaggelis.UserManagementSystem.repositories.IPasswordResetTokenRepository;
+import com.vaggelis.UserManagementSystem.repositories.IUserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+@Service
+@RequiredArgsConstructor
+public class PasswordResetServiceImpl implements IPasswordResetService{
+
+    private final IUserRepository userRepository;
+    private final IPasswordResetTokenRepository tokenRepo;
+    private final PasswordEncoder passwordEncoder;
+
+    @Override
+    public void createPasswordResetToken(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        String token = UUID.randomUUID().toString();
+        PasswordResetToken resetToken = new PasswordResetToken();
+        resetToken.setToken(token);
+        resetToken.setUser(user);
+        resetToken.setExpiryDate(LocalDateTime.now().plusHours(1));
+        tokenRepo.save(resetToken);
+
+        String link = "http://localhost:8089/reset-password?token=" + token;
+        sendEmail(user.getEmail(), link);
+
+    }
+
+    @Override
+    public void resetPassword(String token, String newPassword) {
+        PasswordResetToken prt = tokenRepo.findByToken(token)
+                .orElseThrow(() -> new RuntimeException("Invalid or expired token"));
+
+        if (prt.getExpiryDate().isBefore(LocalDateTime.now())){
+            throw new RuntimeException("Token expired");
+        }
+
+        User user = prt.getUser();
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        tokenRepo.delete(prt); // Invalidate token
+
+    }
+
+
+    // Dummy email sender for demo purposes
+    private void sendEmail(String to, String link){
+        System.out.println("Sending password reset link to " + to);
+        System.out.println("Link: " + link);
+    }
+}

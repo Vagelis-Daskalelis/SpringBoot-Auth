@@ -1,15 +1,14 @@
 package com.vaggelis.UserManagementSystem.validator;
 
-import com.vaggelis.UserManagementSystem.dtos.SignUpRequest;
-import org.springframework.stereotype.Component;
+
+import com.vaggelis.UserManagementSystem.dtos.UpdateRequest;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ValidationUtils;
 import org.springframework.validation.Validator;
 
 import java.util.regex.Pattern;
 
-@Component
-public class SignUpValidator implements Validator {
+public class UpdateRequestValidator implements Validator {
 
     private static final Pattern EMAIL_PATTERN = Pattern.compile(
             "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$"
@@ -17,12 +16,12 @@ public class SignUpValidator implements Validator {
 
     @Override
     public boolean supports(Class<?> clazz) {
-        return SignUpRequest.class == clazz;
+        return UpdateRequest.class == clazz;
     }
 
     @Override
     public void validate(Object target, Errors errors) {
-        SignUpRequest request = (SignUpRequest) target;
+        UpdateRequest request = (UpdateRequest) target;
 
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "uname", "uname.empty", "Username is required.");
         if (request.getUname() != null && (request.getUname().length() < 3 || request.getUname().length() > 16)) {

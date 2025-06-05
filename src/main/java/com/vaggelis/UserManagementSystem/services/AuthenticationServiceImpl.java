@@ -3,6 +3,7 @@ package com.vaggelis.UserManagementSystem.services;
 import com.vaggelis.UserManagementSystem.dtos.JWTAuthenticationResponse;
 import com.vaggelis.UserManagementSystem.dtos.SignInRequest;
 import com.vaggelis.UserManagementSystem.dtos.SignUpRequest;
+import com.vaggelis.UserManagementSystem.exceptions.UserAlreadyExistsException;
 import com.vaggelis.UserManagementSystem.maps.Map;
 import com.vaggelis.UserManagementSystem.models.Role;
 import com.vaggelis.UserManagementSystem.models.User;
@@ -25,30 +26,31 @@ public class AuthenticationServiceImpl implements IAuthenticationService{
     private final PasswordEncoder passwordEncoder;
     private final IJWTService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final IAuditLogService auditLogService;
 
 
-//    @Override
-//    public JWTAuthenticationResponse signUp(SignUpRequest request) {
-//        var user = User.builder().username(request.getUsername())
-//                .email(request.getEmail())
-//                .password(passwordEncoder.encode(request.getPassword()))
-//                .role(Role.USER)
-//                .createdAt(LocalDateTime.now()).build();
-//        userRepository.save(user);
-//        var jwt = jwtService.generateToken(user);
-//        return JWTAuthenticationResponse.builder().token(jwt).build();
-//    }
 
+    //Signs up a user
     @Override
-    public JWTAuthenticationResponse signUp(SignUpRequest request) {
-        User user = Map.mapFromInsertUser(request, passwordEncoder);
+    public void signUp(SignUpRequest request) throws UserAlreadyExistsException {
+        User user;
 
-        userRepository.save(user);
-        var jwt = jwtService.generateToken(user);
-        return JWTAuthenticationResponse.builder().token(jwt).build();
+        try {
+            Optional<User> userFind = userRepository.findByEmail(request.getEmail());
+
+            if (userFind.isPresent()) throw new UserAlreadyExistsException(request.getEmail());
+
+            user = Map.mapFromInsertUser(request, passwordEncoder);
+            auditLogService.log(request.getEmail(), "signup", request.getUname());
+
+            userRepository.save(user);
+
+        } catch (UserAlreadyExistsException e) {
+            throw e;
+        }
     }
 
-
+    //Signs in a user
     @Override
     public JWTAuthenticationResponse SignIn(SignInRequest request) {
         authenticationManager.authenticate(
@@ -56,18 +58,31 @@ public class AuthenticationServiceImpl implements IAuthenticationService{
         var user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid email or password"));
         var jwt = jwtService.generateToken(user);
+        auditLogService.log(user.getEmail(), "signin", user.getUname());
         return JWTAuthenticationResponse.builder().token(jwt).build();
     }
 
+    //Signs up a manager
     @Override
-    public JWTAuthenticationResponse managerSignUp(SignUpRequest request) {
-        User user = Map.mapFromInsertManager(request, passwordEncoder);
+    public void managerSignUp(SignUpRequest request) throws UserAlreadyExistsException {
+        User user;
 
-        userRepository.save(user);
-        var jwt = jwtService.generateToken(user);
-        return JWTAuthenticationResponse.builder().token(jwt).build();
+        try {
+            Optional<User> userFind = userRepository.findByEmail(request.getEmail());
+
+            if (userFind.isPresent()) throw new UserAlreadyExistsException(request.getEmail());
+
+            user = Map.mapFromInsertUser(request, passwordEncoder);
+            auditLogService.log(request.getEmail(), "signup", request.getUname());
+
+            userRepository.save(user);
+
+        } catch (UserAlreadyExistsException e) {
+            throw e;
+        }
     }
 
+    // creates an admin
     @PostConstruct
     public void createAnAdminAccount(){
         Optional<User> adminAccount = userRepository.findByRole(Role.ADMIN);

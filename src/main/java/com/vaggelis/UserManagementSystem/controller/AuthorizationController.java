@@ -1,11 +1,14 @@
 package com.vaggelis.UserManagementSystem.controller;
 
+import com.vaggelis.UserManagementSystem.dtos.JWTAuthenticationResponse;
 import com.vaggelis.UserManagementSystem.dtos.SignUpRequest;
 import com.vaggelis.UserManagementSystem.dtos.UpdateRequest;
 import com.vaggelis.UserManagementSystem.exceptions.UserAlreadyExistsException;
 import com.vaggelis.UserManagementSystem.exceptions.UserNotFoundException;
+import com.vaggelis.UserManagementSystem.models.AuditLog;
 import com.vaggelis.UserManagementSystem.models.User;
 import com.vaggelis.UserManagementSystem.services.AuthenticationServiceImpl;
+import com.vaggelis.UserManagementSystem.services.IAuditLogService;
 import com.vaggelis.UserManagementSystem.services.UsersCrudServiceImpl;
 import com.vaggelis.UserManagementSystem.validator.SignUpValidator;
 import jakarta.validation.Valid;
@@ -26,20 +29,12 @@ public class AuthorizationController {
 
     private final UsersCrudServiceImpl usersCrudService;
     private final SignUpValidator validator;
+    private final IAuditLogService auditLogService;
 
     private final AuthenticationServiceImpl authenticationService;
 
-    @GetMapping
-    public ResponseEntity<String> sayHello() {
-        return ResponseEntity.ok("Here is your resource");
-    }
 
-    @GetMapping("/user")
-    public ResponseEntity<String> user() {
-        return ResponseEntity.ok("Here is your resource user");
-    }
-
-    @PostMapping("/user/create")
+    @PostMapping("/manager/user/create")
     public ResponseEntity<User> createUser(@Valid @RequestBody SignUpRequest request, BindingResult bindingResult){
         validator.validate(request, bindingResult);
         if (bindingResult.hasErrors()){
@@ -53,8 +48,12 @@ public class AuthorizationController {
         }
     }
 
-    @PutMapping("/user/update")
-    public ResponseEntity<User> updateUser(@RequestBody UpdateRequest request){
+    @PutMapping("/manager/user/update")
+    public ResponseEntity<User> updateUser(@Valid @RequestBody UpdateRequest request, BindingResult bindingResult){
+        validator.validate(request, bindingResult);
+        if (bindingResult.hasErrors()){
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
 
         try {
             User user = usersCrudService.updateUser(request);
@@ -64,7 +63,7 @@ public class AuthorizationController {
         }
     }
 
-    @DeleteMapping("/user/delete/{id}")
+    @DeleteMapping("/manager/user/delete/{id}")
     public ResponseEntity<User> deleteUser(@PathVariable Long id){
 
         try {
@@ -75,7 +74,7 @@ public class AuthorizationController {
         }
     }
 
-    @GetMapping("/user/all")
+    @GetMapping("/manager/user/all")
     public ResponseEntity<List<User>> findAllUsers(){
         List<User> users;
 
@@ -87,7 +86,7 @@ public class AuthorizationController {
         }
     }
 
-    @GetMapping("/user/{email}")
+    @GetMapping("/manager/user/{email}")
     public ResponseEntity<User> findUser(@PathVariable String email){
         try {
             User user = usersCrudService.findUser(email);
@@ -97,22 +96,17 @@ public class AuthorizationController {
         }
     }
 
-    @GetMapping("/admin")
-    public ResponseEntity<String> admin() {
-        return ResponseEntity.ok("Here is your resource admin");
-    }
 
-    @GetMapping("/manager")
-    public  ResponseEntity<String> manager() {
-        return ResponseEntity.ok("Here is your resource manager");
-    }
-
-
-
-    @PutMapping("/user/update/{id}")
-    public ResponseEntity<User> updateYourUser(@PathVariable Long id,
+    @PutMapping("/user/your/update/{id}")
+    public ResponseEntity<User> updateYourUser(@Valid @PathVariable Long id,
                                            @RequestBody UpdateRequest request,
-                                           Authentication authentication) {
+                                           Authentication authentication,
+                                               BindingResult bindingResult) {
+        validator.validate(request, bindingResult);
+        if (bindingResult.hasErrors()){
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+
         User currentUser = (User) authentication.getPrincipal();
         Long currentUserId = currentUser.getId();
 
@@ -138,5 +132,33 @@ public class AuthorizationController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
 
+    }
+
+
+    @PostMapping("/admin/signup/manager")
+    public  ResponseEntity<JWTAuthenticationResponse> signupManager(@Valid @RequestBody SignUpRequest request, BindingResult bindingResult) {
+        validator.validate(request, bindingResult);
+        if (bindingResult.hasErrors()){
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        try {
+            authenticationService.managerSignUp(request);
+            return  new ResponseEntity<>(HttpStatus.OK);
+        } catch (UserAlreadyExistsException e) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+    }
+
+
+    @GetMapping("/admin/logs/all")
+    public ResponseEntity<List<AuditLog>> findAllLogs(){
+        List<AuditLog> logs;
+
+        try {
+            logs = auditLogService.findAll();
+            return new ResponseEntity<>(logs, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
     }
 }

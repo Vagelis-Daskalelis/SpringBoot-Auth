@@ -19,6 +19,10 @@ public class PasswordResetServiceImpl implements IPasswordResetService{
     private final IPasswordResetTokenRepository tokenRepo;
     private final PasswordEncoder passwordEncoder;
 
+    /**Gives you a token for creating a new password
+     *
+     * @param email
+     */
     @Override
     public void createPasswordResetToken(String email) {
         User user = userRepository.findByEmail(email)
@@ -36,6 +40,12 @@ public class PasswordResetServiceImpl implements IPasswordResetService{
 
     }
 
+
+    /**creates a new password after giving the token and your new password
+     *
+     * @param token
+     * @param newPassword
+     */
     @Override
     public void resetPassword(String token, String newPassword) {
         PasswordResetToken prt = tokenRepo.findByToken(token)
@@ -55,6 +65,7 @@ public class PasswordResetServiceImpl implements IPasswordResetService{
 
 
     // Dummy email sender for demo purposes
+    // Writes the password to the console
     private void sendEmail(String to, String link){
         System.out.println("Sending password reset link to " + to);
         System.out.println("Link: " + link);

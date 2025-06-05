@@ -4,6 +4,9 @@ import com.vaggelis.UserManagementSystem.dtos.JWTAuthenticationResponse;
 import com.vaggelis.UserManagementSystem.dtos.ResetPasswordRequest;
 import com.vaggelis.UserManagementSystem.dtos.SignInRequest;
 import com.vaggelis.UserManagementSystem.dtos.SignUpRequest;
+import com.vaggelis.UserManagementSystem.exceptions.UserAlreadyExistsException;
+import com.vaggelis.UserManagementSystem.models.AuditLog;
+import com.vaggelis.UserManagementSystem.services.IAuditLogService;
 import com.vaggelis.UserManagementSystem.services.IAuthenticationService;
 import com.vaggelis.UserManagementSystem.services.PasswordResetServiceImpl;
 import com.vaggelis.UserManagementSystem.validator.SignUpValidator;
@@ -13,6 +16,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -28,19 +33,14 @@ public class AuthenticationController {
         if (bindingResult.hasErrors()){
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
-
-        return ResponseEntity.ok(authenticationService.signUp(request));
-    }
-
-    @PostMapping("/signup/manager")
-    public  ResponseEntity<JWTAuthenticationResponse> signupManager(@Valid @RequestBody SignUpRequest request, BindingResult bindingResult) {
-        validator.validate(request, bindingResult);
-        if (bindingResult.hasErrors()){
+        try {
+            authenticationService.signUp(request);
+            return  new ResponseEntity<>(HttpStatus.OK);
+        } catch (UserAlreadyExistsException e) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
-
-        return ResponseEntity.ok(authenticationService.managerSignUp(request));
     }
+
 
     @PostMapping("/signin")
     public ResponseEntity<JWTAuthenticationResponse> signIn(@RequestBody SignInRequest request) {
@@ -59,5 +59,6 @@ public class AuthenticationController {
         resetService.resetPassword(req.getToken(), req.getNewPassword());
         return ResponseEntity.ok("Password updated");
     }
+
 
 }

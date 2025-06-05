@@ -26,15 +26,15 @@ public class UsersCrudServiceImpl implements IUsersCrudService{
     private final PasswordEncoder passwordEncoder;
 
 
+    // inserts a new user
     @Override
     public User insertUser(SignUpRequest request) throws UserAlreadyExistsException {
         User user;
 
         try {
             Optional<User> userFind = userRepository.findByEmail(request.getEmail());
-            //User userFind = userRepository.findUserByEmail(request.getEmail());
+
             if (userFind.isPresent()) throw new UserAlreadyExistsException(request.getEmail());
-            //if (userFind != null) throw new UserAlreadyExistsException(request.getEmail());
 
             user = Map.mapFromInsertUser(request, passwordEncoder);
 
@@ -48,6 +48,7 @@ public class UsersCrudServiceImpl implements IUsersCrudService{
 
     }
 
+    // updated an user
     @Override
     public User updateUser(UpdateRequest request) throws UserNotFoundException {
         User user;
@@ -66,6 +67,7 @@ public class UsersCrudServiceImpl implements IUsersCrudService{
         return updatedUser;
     }
 
+    // deletes an user
     @Override
     public User deleteUser(Long id) throws UserNotFoundException {
         User user = null;
@@ -81,11 +83,13 @@ public class UsersCrudServiceImpl implements IUsersCrudService{
 
     }
 
+    // finds all users
     @Override
     public List<User> findAll() throws Exception {
         return userRepository.findAll();
     }
 
+    // find a user from his email
     @Override
     public User findUser(String email) throws UserNotFoundException {
         User user;
@@ -99,6 +103,7 @@ public class UsersCrudServiceImpl implements IUsersCrudService{
         return user;
     }
 
+    // updates the user that you are logged in
     @Override
     public User updateYourUser(UpdateRequest request, Long targetUserId, Long currentUserId) throws UserNotFoundException {
         if (!targetUserId.equals(currentUserId)){
@@ -121,6 +126,7 @@ public class UsersCrudServiceImpl implements IUsersCrudService{
         return targetUser;
     }
 
+    // deletes the user that you are logged in
     @Override
     public User deleteYourUser(Long targetUserId, Long currentUserId) throws UserNotFoundException {
         if (!targetUserId.equals(currentUserId)){

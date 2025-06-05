@@ -21,7 +21,7 @@ public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String Uname;
+    private String uname;
     private String email;
     private String password;
     @Enumerated(EnumType.STRING)
@@ -69,7 +69,7 @@ public class User implements UserDetails {
 
     public User(Long id, String username, String email, String password, Status status, Role role) {
         this.id = id;
-        this.Uname = username;
+        this.uname = username;
         this.email = email;
         this.password = password;
         this.status = status;

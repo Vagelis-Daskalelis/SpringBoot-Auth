@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 public class SignUpRequest {
     @NotNull
     @Size(min = 3, max = 16)
-    private String Uname;
+    private String uname;
     @NotNull
     @Pattern(regexp = "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$", message = "Wrong email address")
     private String email;

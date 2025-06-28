@@ -9,4 +9,5 @@ public interface IAuthenticationService {
     void signUp(SignUpRequest request) throws UserAlreadyExistsException;
     JWTAuthenticationResponse SignIn(SignInRequest request);
     void managerSignUp(SignUpRequest request) throws UserAlreadyExistsException;
+    public void logout(String email);
 }

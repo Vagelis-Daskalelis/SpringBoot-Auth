@@ -99,4 +99,16 @@ public class AuthenticationServiceImpl implements IAuthenticationService{
             System.out.println("Admin already exists");
         }
     }
+
+
+    @Override
+    public void logout(String email) {
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            auditLogService.log(user.getEmail(), "logout", user.getUname());
+        } else {
+            throw new IllegalArgumentException("User not found with email: " + email);
+        }
+    }
 }

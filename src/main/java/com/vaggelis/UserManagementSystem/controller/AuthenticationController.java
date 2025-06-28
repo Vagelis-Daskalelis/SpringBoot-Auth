@@ -14,6 +14,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -58,6 +59,19 @@ public class AuthenticationController {
     public ResponseEntity<String> resetPassword(@RequestBody ResetPasswordRequest req) {
         resetService.resetPassword(req.getToken(), req.getNewPassword());
         return ResponseEntity.ok("Password updated");
+    }
+
+
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated");
+        }
+
+        String email = authentication.getName(); // Gets the email from the JWT's subject
+        authenticationService.logout(email);
+
+        return ResponseEntity.ok("User logged out successfully");
     }
 
 
